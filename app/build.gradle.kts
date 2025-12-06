@@ -32,14 +32,14 @@ android {
             // Check for signing properties from CI/CD
             val keystoreFile = project.findProperty("android.injected.signing.store.file") as String?
             val keystorePassword = project.findProperty("android.injected.signing.store.password") as String?
-            val keyAlias = project.findProperty("android.injected.signing.key.alias") as String?
-            val keyPassword = project.findProperty("android.injected.signing.key.password") as String?
+            val signingKeyAlias = project.findProperty("android.injected.signing.key.alias") as String?
+            val signingKeyPassword = project.findProperty("android.injected.signing.key.password") as String?
             
-            if (keystoreFile != null && keystorePassword != null && keyAlias != null && keyPassword != null) {
+            if (keystoreFile != null && keystorePassword != null && signingKeyAlias != null && signingKeyPassword != null) {
                 storeFile = file(keystoreFile)
                 storePassword = keystorePassword
-                keyAlias = keyAlias
-                keyPassword = keyPassword
+                keyAlias = signingKeyAlias
+                keyPassword = signingKeyPassword
             }
         }
     }
