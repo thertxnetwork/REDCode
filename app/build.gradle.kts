@@ -3,6 +3,13 @@ plugins {
     id("org.jetbrains.kotlin.android")
 }
 
+// Version constants
+val soraEditorVersion = "0.23.4"
+val androidxCoreVersion = "1.13.1"
+val materialVersion = "1.12.0"
+val coroutinesVersion = "1.9.0"
+val lsp4jVersion = "0.21.2"
+
 android {
     namespace = "com.redcode.editor"
     compileSdk = 34
@@ -52,7 +59,7 @@ android {
 
 dependencies {
     // AndroidX Core
-    implementation("androidx.core:core-ktx:1.13.1")
+    implementation("androidx.core:core-ktx:$androidxCoreVersion")
     implementation("androidx.appcompat:appcompat:1.7.0")
     implementation("androidx.activity:activity-ktx:1.9.3")
     implementation("androidx.fragment:fragment-ktx:1.8.5")
@@ -61,21 +68,21 @@ dependencies {
     implementation("androidx.coordinatorlayout:coordinatorlayout:1.2.0")
     
     // Material Design
-    implementation("com.google.android.material:material:1.12.0")
+    implementation("com.google.android.material:material:$materialVersion")
     implementation("androidx.constraintlayout:constraintlayout:2.2.0")
     
     // Sora Editor
-    implementation("io.github.rosemoe.sora-editor:editor:0.23.4")
-    implementation("io.github.rosemoe.sora-editor:language-textmate:0.23.4")
-    implementation("io.github.rosemoe.sora-editor:language-java:0.23.4")
+    implementation("io.github.rosemoe.sora-editor:editor:$soraEditorVersion")
+    implementation("io.github.rosemoe.sora-editor:language-textmate:$soraEditorVersion")
+    implementation("io.github.rosemoe.sora-editor:language-java:$soraEditorVersion")
     
     // LSP Support (for future use)
-    implementation("org.eclipse.lsp4j:org.eclipse.lsp4j:0.21.2")
-    implementation("org.eclipse.lsp4j:org.eclipse.lsp4j.jsonrpc:0.21.2")
+    implementation("org.eclipse.lsp4j:org.eclipse.lsp4j:$lsp4jVersion")
+    implementation("org.eclipse.lsp4j:org.eclipse.lsp4j.jsonrpc:$lsp4jVersion")
     
     // Coroutines
-    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.9.0")
-    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.9.0")
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:$coroutinesVersion")
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:$coroutinesVersion")
     
     // File handling
     implementation("androidx.documentfile:documentfile:1.0.1")

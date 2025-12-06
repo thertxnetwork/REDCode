@@ -151,7 +151,7 @@ class MainActivity : AppCompatActivity() {
     }
     
     private fun saveFileToUri(uri: Uri) {
-        val fragment = supportFragmentManager.findFragmentByTag("f$currentFileIndex") as? EditorFragment
+        val fragment = supportFragmentManager.findFragmentByTag(getFragmentTag(currentFileIndex)) as? EditorFragment
         fragment?.let {
             val content = it.saveFile()
             if (fileManager.writeFile(uri, content)) {
@@ -167,7 +167,7 @@ class MainActivity : AppCompatActivity() {
     private fun closeCurrentTab() {
         if (openFiles.isEmpty()) return
         
-        val fragment = supportFragmentManager.findFragmentByTag("f$currentFileIndex") as? EditorFragment
+        val fragment = supportFragmentManager.findFragmentByTag(getFragmentTag(currentFileIndex)) as? EditorFragment
         if (fragment?.isDirty() == true) {
             MaterialAlertDialogBuilder(this)
                 .setTitle(getString(R.string.confirm_close))
@@ -198,20 +198,28 @@ class MainActivity : AppCompatActivity() {
     }
     
     private fun performCloseTab() {
-        if (currentFileIndex >= openFiles.size) return
+        val indexToClose = currentFileIndex
         
-        openFiles.removeAt(currentFileIndex)
+        // Validate index before proceeding
+        if (indexToClose < 0 || indexToClose >= openFiles.size) return
+        
+        openFiles.removeAt(indexToClose)
         
         if (openFiles.isEmpty()) {
-            binding.viewPager.adapter?.notifyItemRemoved(currentFileIndex)
+            binding.viewPager.adapter?.notifyItemRemoved(indexToClose)
             createNewFile()
         } else {
-            binding.viewPager.adapter?.notifyItemRemoved(currentFileIndex)
+            binding.viewPager.adapter?.notifyItemRemoved(indexToClose)
+            // Update current index if it's out of bounds
             if (currentFileIndex >= openFiles.size) {
                 currentFileIndex = openFiles.size - 1
             }
             binding.viewPager.setCurrentItem(currentFileIndex, true)
         }
+    }
+    
+    private fun getFragmentTag(position: Int): String {
+        return "f$position"
     }
     
     fun updateStatusBar(line: Int, column: Int, language: String) {

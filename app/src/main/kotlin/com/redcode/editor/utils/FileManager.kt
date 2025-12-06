@@ -28,8 +28,8 @@ class FileManager(private val context: Context) {
                 BufferedWriter(OutputStreamWriter(outputStream)).use { writer ->
                     writer.write(content)
                 }
-            }
-            true
+                true
+            } ?: false
         } catch (e: Exception) {
             e.printStackTrace()
             false

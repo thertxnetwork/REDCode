@@ -1,5 +1,11 @@
 package com.redcode.editor.model
 
+/**
+ * Data model representing an open file in the editor.
+ * Note: 'path' is mutable as it may be updated when saving a new/renamed file.
+ * This is acceptable as EditorFile instances are not used in collections where
+ * equals/hashCode based on path would be critical.
+ */
 data class EditorFile(
     var path: String,
     var content: String = "",
