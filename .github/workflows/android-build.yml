@@ -1,0 +1,281 @@
+name: Android CI/CD - Build, Test & Release
+
+on:
+  push:
+    branches: [ main, master, develop, copilot/add-android-code-editor ]
+    tags:
+      - 'v*.*.*'
+  pull_request:
+    branches: [ main, master ]
+  workflow_dispatch:
+
+jobs:
+  test:
+    name: Run Tests
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Set up JDK 17
+      uses: actions/setup-java@v4
+      with:
+        java-version: '17'
+        distribution: 'temurin'
+        cache: gradle
+        
+    - name: Grant execute permission for gradlew
+      run: chmod +x gradlew
+      
+    - name: Run Lint
+      run: ./gradlew lintDebug --stacktrace
+      continue-on-error: true
+      
+    - name: Run Unit Tests
+      run: ./gradlew testDebugUnitTest --stacktrace
+      continue-on-error: true
+      
+    - name: Upload Lint Results
+      if: always()
+      uses: actions/upload-artifact@v4
+      with:
+        name: lint-results
+        path: app/build/reports/lint-results-debug.html
+        retention-days: 30
+        if-no-files-found: ignore
+      
+    - name: Upload Test Results
+      if: always()
+      uses: actions/upload-artifact@v4
+      with:
+        name: test-results
+        path: app/build/reports/tests/testDebugUnitTest/
+        retention-days: 30
+        if-no-files-found: ignore
+
+  build:
+    name: Build APK
+    needs: test
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+      
+    - name: Set up JDK 17
+      uses: actions/setup-java@v4
+      with:
+        java-version: '17'
+        distribution: 'temurin'
+        cache: gradle
+        
+    - name: Grant execute permission for gradlew
+      run: chmod +x gradlew
+      
+    - name: Extract version info
+      id: version_info
+      run: |
+        if [[ "${{ github.ref }}" == refs/tags/* ]]; then
+          VERSION="${GITHUB_REF#refs/tags/}"
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "version_name=${VERSION#v}" >> $GITHUB_OUTPUT
+        else
+          COMMIT_COUNT=$(git rev-list --count HEAD)
+          SHORT_SHA=$(git rev-parse --short HEAD)
+          echo "version=v1.0.$COMMIT_COUNT" >> $GITHUB_OUTPUT
+          echo "version_name=1.0.$COMMIT_COUNT-$SHORT_SHA" >> $GITHUB_OUTPUT
+        fi
+        echo "commit_sha=$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
+        echo "build_date=$(date +'%Y-%m-%d %H:%M:%S')" >> $GITHUB_OUTPUT
+      
+    - name: Set Version Properties
+      run: |
+        VERSION_CODE=$(git rev-list --count HEAD)
+        VERSION_NAME="${{ steps.version_info.outputs.version_name }}"
+        echo "VERSION_CODE=$VERSION_CODE" >> gradle.properties
+        echo "VERSION_NAME=$VERSION_NAME" >> gradle.properties
+        echo "Set versionCode to $VERSION_CODE and versionName to $VERSION_NAME"
+      
+    - name: Decode Keystore
+      if: github.event_name == 'push' && (startsWith(github.ref, 'refs/tags/') || github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master')
+      env:
+        KEYSTORE_BASE64: ${{ secrets.KEYSTORE_FILE }}
+      run: |
+        if [ -n "$KEYSTORE_BASE64" ]; then
+          mkdir -p /tmp/keystore
+          echo "$KEYSTORE_BASE64" | base64 -d > /tmp/keystore/release-keystore.jks
+          echo "Keystore decoded successfully"
+        else
+          echo "No keystore found in secrets, will build unsigned release"
+        fi
+      
+    - name: Build Debug APK
+      run: ./gradlew assembleDebug --stacktrace
+      
+    - name: Build Release APK (Signed)
+      if: github.event_name == 'push' && (startsWith(github.ref, 'refs/tags/') || github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master')
+      env:
+        KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
+        KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
+        KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
+      run: |
+        if [ -f /tmp/keystore/release-keystore.jks ]; then
+          ./gradlew assembleRelease \
+            -Pandroid.injected.signing.store.file=/tmp/keystore/release-keystore.jks \
+            -Pandroid.injected.signing.store.password="$KEYSTORE_PASSWORD" \
+            -Pandroid.injected.signing.key.alias="$KEY_ALIAS" \
+            -Pandroid.injected.signing.key.password="$KEY_PASSWORD" \
+            --stacktrace
+        else
+          ./gradlew assembleRelease --stacktrace
+        fi
+    
+    - name: Cleanup Keystore
+      if: always()
+      run: |
+        rm -rf /tmp/keystore
+        echo "Keystore cleaned up"
+      
+    - name: Build Release APK (Unsigned)
+      if: github.event_name != 'push' || (!startsWith(github.ref, 'refs/tags/') && github.ref != 'refs/heads/main' && github.ref != 'refs/heads/master')
+      run: ./gradlew assembleRelease --stacktrace
+      
+    - name: Rename APK files
+      run: |
+        VERSION="${{ steps.version_info.outputs.version }}"
+        cd app/build/outputs/apk/debug
+        for file in *.apk; do
+          if [ -f "$file" ]; then
+            mv "$file" "REDCode-${VERSION}-debug.apk"
+            break
+          fi
+        done
+        cd ../release
+        for file in *.apk; do
+          if [ -f "$file" ]; then
+            if [[ "$file" == *"unsigned"* ]]; then
+              mv "$file" "REDCode-${VERSION}-release-unsigned.apk"
+            else
+              mv "$file" "REDCode-${VERSION}-release.apk"
+            fi
+            break
+          fi
+        done
+      
+    - name: Create Build Info
+      run: |
+        cat > build-info.txt << EOF
+        Build Information
+        ==================
+        Version: ${{ steps.version_info.outputs.version }}
+        Version Name: ${{ steps.version_info.outputs.version_name }}
+        Commit: ${{ steps.version_info.outputs.commit_sha }}
+        Build Date: ${{ steps.version_info.outputs.build_date }}
+        Branch: ${{ github.ref_name }}
+        Triggered by: ${{ github.event_name }}
+        Workflow: ${{ github.workflow }}
+        Run Number: ${{ github.run_number }}
+        EOF
+        
+    - name: Upload Debug APK
+      uses: actions/upload-artifact@v4
+      with:
+        name: REDCode-debug-${{ steps.version_info.outputs.version }}
+        path: app/build/outputs/apk/debug/*.apk
+        retention-days: 30
+        
+    - name: Upload Release APK
+      uses: actions/upload-artifact@v4
+      with:
+        name: REDCode-release-${{ steps.version_info.outputs.version }}
+        path: app/build/outputs/apk/release/*.apk
+        retention-days: 30
+        
+    - name: Upload Mapping Files
+      if: github.event_name == 'push'
+      uses: actions/upload-artifact@v4
+      with:
+        name: mapping-files-${{ steps.version_info.outputs.version }}
+        path: app/build/outputs/mapping/release/
+        retention-days: 90
+        if-no-files-found: ignore
+        
+    - name: Upload Build Info
+      uses: actions/upload-artifact@v4
+      with:
+        name: build-info-${{ steps.version_info.outputs.version }}
+        path: build-info.txt
+        retention-days: 30
+
+  release:
+    name: Create GitHub Release
+    needs: build
+    if: startsWith(github.ref, 'refs/tags/')
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+        
+    - name: Extract version info
+      id: version_info
+      run: |
+        VERSION="${GITHUB_REF#refs/tags/}"
+        echo "version=$VERSION" >> $GITHUB_OUTPUT
+        echo "version_name=${VERSION#v}" >> $GITHUB_OUTPUT
+        
+    - name: Download Debug APK
+      uses: actions/download-artifact@v4
+      with:
+        name: REDCode-debug-${{ steps.version_info.outputs.version }}
+        path: ./artifacts/debug/
+        
+    - name: Download Release APK
+      uses: actions/download-artifact@v4
+      with:
+        name: REDCode-release-${{ steps.version_info.outputs.version }}
+        path: ./artifacts/release/
+        
+    - name: Download Build Info
+      uses: actions/download-artifact@v4
+      with:
+        name: build-info-${{ steps.version_info.outputs.version }}
+        path: ./artifacts/
+        
+    - name: Generate Release Notes
+      id: release_notes
+      run: |
+        PREV_TAG=$(git describe --tags --abbrev=0 HEAD^ 2>/dev/null || echo "")
+        if [ -n "$PREV_TAG" ]; then
+          echo "## Changes since $PREV_TAG" > release-notes.md
+          echo "" >> release-notes.md
+          git log $PREV_TAG..HEAD --pretty=format:"- %s (%h)" >> release-notes.md
+        else
+          echo "## Initial Release" > release-notes.md
+          echo "" >> release-notes.md
+          echo "First release of REDCode Android Editor" >> release-notes.md
+        fi
+        echo "" >> release-notes.md
+        echo "## Build Information" >> release-notes.md
+        cat ./artifacts/build-info.txt >> release-notes.md
+        
+    - name: Create GitHub Release
+      uses: softprops/action-gh-release@v1
+      with:
+        name: REDCode ${{ steps.version_info.outputs.version }}
+        body_path: release-notes.md
+        draft: false
+        prerelease: false
+        files: |
+          ./artifacts/debug/*.apk
+          ./artifacts/release/*.apk
+          ./artifacts/build-info.txt
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
