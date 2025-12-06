@@ -91,13 +91,13 @@ jobs:
         echo "commit_sha=$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
         echo "build_date=$(date +'%Y-%m-%d %H:%M:%S')" >> $GITHUB_OUTPUT
       
-    - name: Update version in build.gradle
+    - name: Set Version Properties
       run: |
         VERSION_CODE=$(git rev-list --count HEAD)
         VERSION_NAME="${{ steps.version_info.outputs.version_name }}"
-        sed -i "s/versionCode = [0-9]*/versionCode = $VERSION_CODE/" app/build.gradle.kts
-        sed -i "s/versionName = \".*\"/versionName = \"$VERSION_NAME\"/" app/build.gradle.kts
-        echo "Updated versionCode to $VERSION_CODE and versionName to $VERSION_NAME"
+        echo "VERSION_CODE=$VERSION_CODE" >> gradle.properties
+        echo "VERSION_NAME=$VERSION_NAME" >> gradle.properties
+        echo "Set versionCode to $VERSION_CODE and versionName to $VERSION_NAME"
       
     - name: Decode Keystore
       if: github.event_name == 'push' && (startsWith(github.ref, 'refs/tags/') || github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master')
@@ -105,7 +105,8 @@ jobs:
         KEYSTORE_BASE64: ${{ secrets.KEYSTORE_FILE }}
       run: |
         if [ -n "$KEYSTORE_BASE64" ]; then
-          echo "$KEYSTORE_BASE64" | base64 -d > app/release-keystore.jks
+          mkdir -p /tmp/keystore
+          echo "$KEYSTORE_BASE64" | base64 -d > /tmp/keystore/release-keystore.jks
           echo "Keystore decoded successfully"
         else
           echo "No keystore found in secrets, will build unsigned release"
@@ -121,9 +122,9 @@ jobs:
         KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
         KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
       run: |
-        if [ -f app/release-keystore.jks ]; then
+        if [ -f /tmp/keystore/release-keystore.jks ]; then
           ./gradlew assembleRelease \
-            -Pandroid.injected.signing.store.file=$(pwd)/app/release-keystore.jks \
+            -Pandroid.injected.signing.store.file=/tmp/keystore/release-keystore.jks \
             -Pandroid.injected.signing.store.password="$KEYSTORE_PASSWORD" \
             -Pandroid.injected.signing.key.alias="$KEY_ALIAS" \
             -Pandroid.injected.signing.key.password="$KEY_PASSWORD" \
@@ -131,6 +132,12 @@ jobs:
         else
           ./gradlew assembleRelease --stacktrace
         fi
+    
+    - name: Cleanup Keystore
+      if: always()
+      run: |
+        rm -rf /tmp/keystore
+        echo "Keystore cleaned up"
       
     - name: Build Release APK (Unsigned)
       if: github.event_name != 'push' || (!startsWith(github.ref, 'refs/tags/') && github.ref != 'refs/heads/main' && github.ref != 'refs/heads/master')
@@ -139,12 +146,24 @@ jobs:
     - name: Rename APK files
       run: |
         VERSION="${{ steps.version_info.outputs.version }}"
-        mv app/build/outputs/apk/debug/app-debug.apk app/build/outputs/apk/debug/REDCode-${VERSION}-debug.apk || true
-        if [ -f app/build/outputs/apk/release/app-release.apk ]; then
-          mv app/build/outputs/apk/release/app-release.apk app/build/outputs/apk/release/REDCode-${VERSION}-release.apk
-        else
-          mv app/build/outputs/apk/release/app-release-unsigned.apk app/build/outputs/apk/release/REDCode-${VERSION}-release-unsigned.apk || true
-        fi
+        cd app/build/outputs/apk/debug
+        for file in *.apk; do
+          if [ -f "$file" ]; then
+            mv "$file" "REDCode-${VERSION}-debug.apk"
+            break
+          fi
+        done
+        cd ../release
+        for file in *.apk; do
+          if [ -f "$file" ]; then
+            if [[ "$file" == *"unsigned"* ]]; then
+              mv "$file" "REDCode-${VERSION}-release-unsigned.apk"
+            else
+              mv "$file" "REDCode-${VERSION}-release.apk"
+            fi
+            break
+          fi
+        done
       
     - name: Create Build Info
       run: |
