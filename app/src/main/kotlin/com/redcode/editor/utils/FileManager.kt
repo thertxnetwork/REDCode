@@ -9,6 +9,10 @@ import java.io.*
 
 class FileManager(private val context: Context) {
     
+    companion object {
+        private const val OUTPUT_MODE_WRITE_TRUNCATE = "wt"
+    }
+    
     fun readFile(uri: Uri): String? {
         return try {
             context.contentResolver.openInputStream(uri)?.use { inputStream ->
@@ -24,7 +28,7 @@ class FileManager(private val context: Context) {
     
     fun writeFile(uri: Uri, content: String): Boolean {
         return try {
-            context.contentResolver.openOutputStream(uri, "wt")?.use { outputStream ->
+            context.contentResolver.openOutputStream(uri, OUTPUT_MODE_WRITE_TRUNCATE)?.use { outputStream ->
                 BufferedWriter(OutputStreamWriter(outputStream)).use { writer ->
                     writer.write(content)
                 }

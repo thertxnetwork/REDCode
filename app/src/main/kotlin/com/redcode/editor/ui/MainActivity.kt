@@ -28,6 +28,18 @@ class MainActivity : AppCompatActivity() {
     private val openFiles = mutableListOf<EditorFile>()
     private var currentFileIndex = 0
     
+    companion object {
+        private const val PERMISSION_REQUEST_CODE = 100
+        private const val URI_SCHEME_CONTENT = "content://"
+        private const val URI_SCHEME_FILE = "file://"
+    }
+    
+    companion object {
+        private const val PERMISSION_REQUEST_CODE = 100
+        private const val URI_SCHEME_CONTENT = "content://"
+        private const val URI_SCHEME_FILE = "file://"
+    }
+    
     private val openFileLauncher = registerForActivityResult(
         ActivityResultContracts.OpenDocument()
     ) { uri: Uri? ->
@@ -100,7 +112,7 @@ class MainActivity : AppCompatActivity() {
                     1 -> {
                         val currentFile = openFiles.getOrNull(currentFileIndex)
                         currentFile?.let {
-                            if (it.path.startsWith("content://") || it.path.startsWith("file://")) {
+                            if (it.path.startsWith(URI_SCHEME_CONTENT) || it.path.startsWith(URI_SCHEME_FILE)) {
                                 saveFileToUri(Uri.parse(it.path))
                             } else {
                                 saveFileLauncher.launch(it.path.substringAfterLast('/'))
@@ -176,7 +188,7 @@ class MainActivity : AppCompatActivity() {
                     // Save file first, then close
                     val file = openFiles[currentFileIndex]
                     val currentIndex = currentFileIndex
-                    if (file.path.startsWith("content://") || file.path.startsWith("file://")) {
+                    if (file.path.startsWith(URI_SCHEME_CONTENT) || file.path.startsWith(URI_SCHEME_FILE)) {
                         saveFileToUri(Uri.parse(file.path))
                         performCloseTab()
                     } else {
