@@ -4,22 +4,26 @@ A professional Android code editor application built with Rosemoe's Sora Editor 
 
 ## ⚠️ Build Status
 
-**Current Status:** Project structure created, but APK build is blocked due to network restrictions.
+**Current Status:** Project structure created. APK builds automatically via GitHub Actions.
 
-### Build Issue
+### Automated APK Builds
 
-The project cannot currently build APK files because:
-- The Google Maven repository (`dl.google.com`) is not accessible in the current environment
-- The Android Gradle Plugin (AGP) is only available from Google's Maven repository
-- Alternative mirrors and proxies are also blocked
+This repository uses GitHub Actions to automatically build APK files on every push. 
 
-### Workaround
+**To get the latest APK:**
+1. Go to the [Actions tab](../../actions) in this repository
+2. Click on the latest successful workflow run
+3. Download the APK artifacts:
+   - `REDCode-debug` - Debug APK for testing
+   - `REDCode-release` - Release APK (unsigned)
 
-To build this project successfully, you need:
+### Local Build Issue
 
-1. **Access to Google Maven Repository**: Ensure your network/environment can reach `https://maven.google.com` or `https://dl.google.com/dl/android/maven2/`
-2. **Android Studio**: Open this project in Android Studio which handles repository access better
-3. **VPN/Proxy**: If in a restricted network, use a VPN or proxy that allows access to Google services
+If building locally, note that the Google Maven repository (`dl.google.com`) may not be accessible in some networks. If you encounter this issue:
+
+1. **Use Android Studio**: It handles repository access better
+2. **Use VPN/Proxy**: If in a restricted network
+3. **Download from Actions**: Use the pre-built APK from GitHub Actions (see above)
 
 ## Features
 
