@@ -1,7 +1,7 @@
 package com.redcode.editor.model
 
 data class EditorFile(
-    val path: String,
+    var path: String,
     var content: String = "",
     var language: Language = Language.PLAIN_TEXT,
     var isDirty: Boolean = false,

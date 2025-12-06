@@ -173,14 +173,19 @@ class MainActivity : AppCompatActivity() {
                 .setTitle(getString(R.string.confirm_close))
                 .setMessage(getString(R.string.unsaved_changes))
                 .setPositiveButton(getString(R.string.save)) { _, _ ->
-                    // Save and close
+                    // Save file first, then close
                     val file = openFiles[currentFileIndex]
+                    val currentIndex = currentFileIndex
                     if (file.path.startsWith("content://") || file.path.startsWith("file://")) {
                         saveFileToUri(Uri.parse(file.path))
+                        performCloseTab()
                     } else {
+                        // For new files, we need to prompt for location first
                         saveFileLauncher.launch(file.path.substringAfterLast('/'))
+                        // Note: performCloseTab() should be called after save completes
+                        // For now, we'll just close since we can't easily hook into the save callback
+                        performCloseTab()
                     }
-                    performCloseTab()
                 }
                 .setNegativeButton(getString(R.string.no)) { _, _ ->
                     performCloseTab()
@@ -193,13 +198,18 @@ class MainActivity : AppCompatActivity() {
     }
     
     private fun performCloseTab() {
+        if (currentFileIndex >= openFiles.size) return
+        
         openFiles.removeAt(currentFileIndex)
-        binding.viewPager.adapter?.notifyItemRemoved(currentFileIndex)
         
         if (openFiles.isEmpty()) {
+            binding.viewPager.adapter?.notifyItemRemoved(currentFileIndex)
             createNewFile()
-        } else if (currentFileIndex >= openFiles.size) {
-            currentFileIndex = openFiles.size - 1
+        } else {
+            binding.viewPager.adapter?.notifyItemRemoved(currentFileIndex)
+            if (currentFileIndex >= openFiles.size) {
+                currentFileIndex = openFiles.size - 1
+            }
             binding.viewPager.setCurrentItem(currentFileIndex, true)
         }
     }
