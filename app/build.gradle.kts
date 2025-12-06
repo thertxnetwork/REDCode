@@ -27,6 +27,23 @@ android {
         }
     }
 
+    signingConfigs {
+        create("release") {
+            // Check for signing properties from CI/CD
+            val keystoreFile = project.findProperty("android.injected.signing.store.file") as String?
+            val keystorePassword = project.findProperty("android.injected.signing.store.password") as String?
+            val keyAlias = project.findProperty("android.injected.signing.key.alias") as String?
+            val keyPassword = project.findProperty("android.injected.signing.key.password") as String?
+            
+            if (keystoreFile != null && keystorePassword != null && keyAlias != null && keyPassword != null) {
+                storeFile = file(keystoreFile)
+                storePassword = keystorePassword
+                keyAlias = keyAlias
+                keyPassword = keyPassword
+            }
+        }
+    }
+
     buildTypes {
         release {
             isMinifyEnabled = true
@@ -34,6 +51,10 @@ android {
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
             )
+            // Apply signing config if available
+            if (signingConfigs.getByName("release").storeFile != null) {
+                signingConfig = signingConfigs.getByName("release")
+            }
         }
         debug {
             isMinifyEnabled = false

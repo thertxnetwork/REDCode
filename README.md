@@ -1,21 +1,36 @@
 # REDCode - Android Code Editor
 
+![Android CI/CD](https://github.com/thertxnetwork/REDCode/actions/workflows/android-build.yml/badge.svg)
+![License](https://img.shields.io/github/license/thertxnetwork/REDCode)
+![Platform](https://img.shields.io/badge/platform-Android-green.svg)
+![API](https://img.shields.io/badge/API-24%2B-brightgreen.svg)
+
 A professional Android code editor application built with Rosemoe's Sora Editor library, supporting Python, HTML, CSS, JavaScript, and TypeScript.
 
-## ⚠️ Build Status
+## 🚀 Build Status & Downloads
 
-**Current Status:** Project structure created. APK builds automatically via GitHub Actions.
+**Current Status:** Fully automated CI/CD pipeline with signed APK releases.
 
-### Automated APK Builds
+### Quick Download
 
-This repository uses GitHub Actions to automatically build APK files on every push. 
+**Latest Release:** Check the [Releases page](../../releases) for stable versions with signed APKs.
 
-**To get the latest APK:**
-1. Go to the [Actions tab](../../actions) in this repository
+**Development Builds:**
+1. Go to the [Actions tab](../../actions/workflows/android-build.yml)
 2. Click on the latest successful workflow run
-3. Download the APK artifacts:
-   - `REDCode-debug` - Debug APK for testing
-   - `REDCode-release` - Release APK (unsigned)
+3. Download APK artifacts:
+   - `REDCode-debug-vX.X.X` - Debug APK for testing
+   - `REDCode-release-vX.X.X` - Release APK (signed when configured)
+
+### CI/CD Features
+- ✅ Automated testing (lint + unit tests)
+- ✅ Automatic version management
+- ✅ Signed release APKs
+- ✅ GitHub releases on version tags
+- ✅ ProGuard mapping file retention
+- ✅ 30-day artifact retention
+
+📖 **Setup Guide:** See [CICD_SETUP.md](CICD_SETUP.md) for complete CI/CD documentation
 
 ### Local Build Issue
 
@@ -98,7 +113,7 @@ REDCode/
 3. **Android SDK**: API 34 installed
 4. **Network Access**: To Google Maven repository
 
-### Build Steps
+### Quick Build Steps
 
 1. **Clone the Repository**
 ```bash
@@ -125,6 +140,8 @@ The APK will be located at: `app/build/outputs/apk/debug/app-debug.apk`
 ```
 
 The APK will be located at: `app/build/outputs/apk/release/app-release.apk`
+
+📖 **For signed releases and CI/CD setup:** See [CICD_SETUP.md](CICD_SETUP.md) and [KEYSTORE_SETUP.md](KEYSTORE_SETUP.md)
 
 ### Build with Gradle (Command Line)
 
