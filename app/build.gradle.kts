@@ -93,9 +93,9 @@ dependencies {
     implementation("androidx.constraintlayout:constraintlayout:2.2.0")
     
     // Sora Editor
-    implementation("io.github.rosemoe.sora-editor:editor:$soraEditorVersion")
-    implementation("io.github.rosemoe.sora-editor:language-textmate:$soraEditorVersion")
-    implementation("io.github.rosemoe.sora-editor:language-java:$soraEditorVersion")
+    implementation("io.github.Rosemoe.sora-editor:editor:$soraEditorVersion")
+    implementation("io.github.Rosemoe.sora-editor:language-textmate:$soraEditorVersion")
+    implementation("io.github.Rosemoe.sora-editor:language-java:$soraEditorVersion")
     
     // LSP Support (for future use)
     implementation("org.eclipse.lsp4j:org.eclipse.lsp4j:$lsp4jVersion")
