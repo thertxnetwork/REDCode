@@ -16,7 +16,7 @@ android {
 
     defaultConfig {
         applicationId = "com.redcode.editor"
-        minSdk = 24
+        minSdk = 26
         targetSdk = 34
         versionCode = (project.findProperty("VERSION_CODE") as String?)?.toIntOrNull() ?: 1
         versionName = (project.findProperty("VERSION_NAME") as String?) ?: "1.0"
@@ -32,14 +32,14 @@ android {
             // Check for signing properties from CI/CD
             val keystoreFile = project.findProperty("android.injected.signing.store.file") as String?
             val keystorePassword = project.findProperty("android.injected.signing.store.password") as String?
-            val keyAlias = project.findProperty("android.injected.signing.key.alias") as String?
-            val keyPassword = project.findProperty("android.injected.signing.key.password") as String?
+            val signingKeyAlias = project.findProperty("android.injected.signing.key.alias") as String?
+            val signingKeyPassword = project.findProperty("android.injected.signing.key.password") as String?
             
-            if (keystoreFile != null && keystorePassword != null && keyAlias != null && keyPassword != null) {
+            if (keystoreFile != null && keystorePassword != null && signingKeyAlias != null && signingKeyPassword != null) {
                 storeFile = file(keystoreFile)
                 storePassword = keystorePassword
-                keyAlias = keyAlias
-                keyPassword = keyPassword
+                keyAlias = signingKeyAlias
+                keyPassword = signingKeyPassword
             }
         }
     }
@@ -64,6 +64,7 @@ android {
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
+        isCoreLibraryDesugaringEnabled = true
     }
     kotlinOptions {
         jvmTarget = "17"
@@ -93,9 +94,9 @@ dependencies {
     implementation("androidx.constraintlayout:constraintlayout:2.2.0")
     
     // Sora Editor
-    implementation("io.github.rosemoe.sora-editor:editor:$soraEditorVersion")
-    implementation("io.github.rosemoe.sora-editor:language-textmate:$soraEditorVersion")
-    implementation("io.github.rosemoe.sora-editor:language-java:$soraEditorVersion")
+    implementation("io.github.Rosemoe.sora-editor:editor:$soraEditorVersion")
+    implementation("io.github.Rosemoe.sora-editor:language-textmate:$soraEditorVersion")
+    implementation("io.github.Rosemoe.sora-editor:language-java:$soraEditorVersion")
     
     // LSP Support (for future use)
     implementation("org.eclipse.lsp4j:org.eclipse.lsp4j:$lsp4jVersion")
@@ -116,6 +117,9 @@ dependencies {
     
     // ViewPager2
     implementation("androidx.viewpager2:viewpager2:1.1.0")
+    
+    // Core library desugaring
+    coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.0.4")
     
     // Testing
     testImplementation("junit:junit:4.13.2")
