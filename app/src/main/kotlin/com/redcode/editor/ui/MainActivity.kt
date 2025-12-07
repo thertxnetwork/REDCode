@@ -34,12 +34,6 @@ class MainActivity : AppCompatActivity() {
         private const val URI_SCHEME_FILE = "file://"
     }
     
-    companion object {
-        private const val PERMISSION_REQUEST_CODE = 100
-        private const val URI_SCHEME_CONTENT = "content://"
-        private const val URI_SCHEME_FILE = "file://"
-    }
-    
     private val openFileLauncher = registerForActivityResult(
         ActivityResultContracts.OpenDocument()
     ) { uri: Uri? ->
@@ -274,9 +268,5 @@ class MainActivity : AppCompatActivity() {
             val file = openFiles[position]
             return EditorFragment.newInstance(file.path, file.content, file.language)
         }
-    }
-    
-    companion object {
-        private const val PERMISSION_REQUEST_CODE = 100
     }
 }
